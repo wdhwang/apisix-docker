@@ -97,6 +97,8 @@ WORKDIR /usr/local/apisix-dashboard/web
 
 RUN if [ "$ENABLE_PROXY" = "true" ] ; then yarn config set registry https://registry.npmmirror.com/ ; fi \
     && yarn install \
+    && cp ./node_modules/@ant-design/pro-provider/lib/locale/en_US.js ./node_modules/@ant-design/pro-provider/lib/locale/zh_CN.js \
+    && cp ./node_modules/@ant-design/pro-provider/es/locale/en_US.js ./node_modules/@ant-design/pro-provider/es/locale/zh_CN.js \
     && yarn build
 
 # Finally combine all the resources into one image
