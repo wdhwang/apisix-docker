@@ -16,7 +16,7 @@
 #
 
 ARG ENABLE_PROXY=false
-ARG ETCD_VERSION=v3.4.14
+ARG ETCD_VERSION=v3.4.24
 ARG APISIX_VERSION=master
 ARG APISIX_DASHBOARD_VERSION=master
 
@@ -27,8 +27,14 @@ ARG APISIX_VERSION
 ARG ENABLE_PROXY
 LABEL apisix_version="${APISIX_VERSION}"
 
+RUN sed -e "s,3.13,3.16,g" -i /etc/apk/repositories
+
+RUN apk add -X https://dl-cdn.alpinelinux.org/alpine/v3.16/main -u alpine-keys --allow-untrusted
+
 RUN set -x \
-    && (test "${ENABLE_PROXY}" != "true" || /bin/sed -i 's,http://dl-cdn.alpinelinux.org,https://mirrors.aliyun.com,g' /etc/apk/repositories) \
+    && apk upgrade && \
+    apk del gmp-dev libstdc++ && \
+    apk add --update --no-cache --repository http://nl.alpinelinux.org/alpine/edge/main gmp-dev libstdc++ \
     && apk add --no-cache --virtual .builddeps \
     automake \
     autoconf \
@@ -36,6 +42,7 @@ RUN set -x \
     pkgconfig \
     cmake \
     git \
+    cargo \
     openldap-dev \
     && mkdir ~/.luarocks \
     && luarocks config variables.OPENSSL_LIBDIR /usr/local/openresty/openssl/lib \
@@ -46,7 +53,6 @@ RUN set -x \
     && (if [ "$APISIX_VERSION" = "master" ] || [ "$APISIX_VERSION" \> "2.2" ]; then echo 'use shell ';else bin='#! /usr/local/openresty/luajit/bin/luajit\npackage.path = "/usr/local/apisix/?.lua;" .. package.path'; sed -i "1s@.*@$bin@" /usr/bin/apisix ; fi;) \
     && mv /usr/local/apisix/deps/share/lua/5.1/apisix /usr/local/apisix \
     && apk del .builddeps build-base make unzip
-
 
 # Build etcd
 FROM alpine:3.13 AS etcd-stage
@@ -63,7 +69,7 @@ RUN wget https://github.com/etcd-io/etcd/releases/download/${ETCD_VERSION}/etcd-
 # Build APISIX Dashboard - 1. download source code from github
 FROM alpine:latest as pre-build
 
-ARG APISIX_DASHBOARD_TAG
+ARG APISIX_DASHBOARD_TAG v3.0.0
 
 RUN set -x \
     && wget https://github.com/apache/apisix-dashboard/archive/${APISIX_DASHBOARD_TAG}.tar.gz -O /tmp/apisix-dashboard.tar.gz \
@@ -108,7 +114,6 @@ ARG ENABLE_PROXY
 
 # add runtime for Apache APISIX
 RUN set -x \
-    && (test "${ENABLE_PROXY}" != "true" || /bin/sed -i 's,http://dl-cdn.alpinelinux.org,https://mirrors.aliyun.com,g' /etc/apk/repositories) \
     && apk add --no-cache bash libstdc++ curl
 
 WORKDIR /usr/local/apisix
