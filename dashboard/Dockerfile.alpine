@@ -18,9 +18,11 @@ ARG BUILDPLATFORM=amd64
 
 FROM --platform=$BUILDPLATFORM alpine:latest as pre-build
 
-ARG APISIX_DASHBOARD_TAG=v3.0.0
+ARG APISIX_DASHBOARD_TAG=v3.0.1
 
 RUN set -x \
+    && apk update \
+    && apk upgrade \
     && apk add --no-cache --virtual .builddeps git \
     && git clone https://github.com/apache/apisix-dashboard.git -b ${APISIX_DASHBOARD_TAG} /usr/local/apisix-dashboard \
     && cd /usr/local/apisix-dashboard && git clean -Xdf \
@@ -51,8 +53,7 @@ COPY --from=pre-build /usr/local/apisix-dashboard .
 
 WORKDIR /usr/local/apisix-dashboard/web
 
-RUN if [ "$ENABLE_PROXY" = "true" ] ; then yarn config set registry https://registry.npm.taobao.org/ ; fi \
-    && yarn install \
+RUN yarn install \
     && cp ./node_modules/@ant-design/pro-provider/lib/locale/en_US.js ./node_modules/@ant-design/pro-provider/lib/locale/zh_CN.js \
     && cp ./node_modules/@ant-design/pro-provider/es/locale/en_US.js ./node_modules/@ant-design/pro-provider/es/locale/zh_CN.js \
     && yarn build
