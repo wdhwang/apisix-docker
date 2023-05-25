@@ -3,7 +3,7 @@ window.onload = function() {
 
   // the following lines will be replaced by docker/configurator, when it runs in a docker-container
   window.ui = SwaggerUIBundle({
-    url: "https://10.50.0.22:30002/swagger/APISIX_routes.yaml",
+    url: "http://10.50.0.22:30002/swagger/APISIX_routes.yaml",
     dom_id: '#swagger-ui',
     deepLinking: true,
     presets: [
